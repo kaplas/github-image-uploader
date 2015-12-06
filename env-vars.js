@@ -1,6 +1,8 @@
 const _ = require("lodash");
 
 const REQUIRED_VARS = [
+	"BA_USERNAME",
+	"BA_PASSWORD",
 	"BRANCH",
 	"FOLDER",
 	"OWNER",

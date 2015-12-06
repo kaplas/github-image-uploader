@@ -1,4 +1,5 @@
-const BPromise = require("bluebird"),
+const basicAuth = require('basic-auth'),
+    BPromise = require("bluebird"),
     envVars = require("./env-vars"),
     express = require("express"),
     formidable = require("formidable"),
@@ -9,11 +10,33 @@ const BPromise = require("bluebird"),
 
 const PORT = process.env.PORT || 8000;
 
+envVars.check();
+
 const app = express();
 app.engine('mustache', mustacheExpress());
 app.set('view engine', 'mustache');
 
-envVars.check();
+// Copied from https://davidbeath.com/posts/expressjs-40-basicauth.html
+function auth(req, res, next) {
+    function unauthorized(res) {
+        res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+        return res.send(401);
+    };
+
+    var user = basicAuth(req);
+
+    if (!user || !user.name || !user.pass) {
+        return unauthorized(res);
+    };
+
+    if (user.name === envVars.get("BA_USERNAME") &&
+        user.pass === envVars.get("BA_PASSWORD")) {
+        return next();
+    } else {
+        return unauthorized(res);
+    };
+};
+app.use(auth);
 
 function getFileUploadAsync(req) {
     return new BPromise(function(resolve, reject) {
