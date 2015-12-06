@@ -1,21 +1,18 @@
+"use strict";
+
 const _ = require("lodash"),
 	BPromise = require("bluebird"),
 	envVars = require("./env-vars"),
 	fs = require("fs"),
+	lwip = require("lwip"),
 	request = require("request"),
 	slug = require("slug");
 
 const COMMIT_MSG = "Image upload from the upload helper app",
 	VALID_IMAGE_TYPES = ["image/png", "image/jpg", "image/jpeg"];
 
-const readFileAsync = BPromise.promisify(fs.readFile);
-
-/*
-// read binary data
-    var bitmap = fs.readFileSync(file);
-    // convert binary data to base64 encoded string
-    return new Buffer(bitmap).toString('base64');
-*/
+const readFileAsync = BPromise.promisify(fs.readFile),
+	openImageAsync = BPromise.promisify(lwip.open);
 
 function verifyParamsAsync(options) {
 	const valid = _.isString(options.title) && _.isObject(options.image) && 
@@ -23,19 +20,59 @@ function verifyParamsAsync(options) {
 	return valid ? BPromise.resolve(options) : BPromise.reject(false);
 }
 
-function convertTitleToFilename(options) {
-	const titleSlug = slug(options.title).toLowerCase(),
-		ext = options.image.type.replace("image/", "");
-	return _.extend(options, { filename: `${titleSlug}.${ext}` });
+function addSlugAndExtInfo(options) {
+	//return _.extend(options, { filename: `${titleSlug}.${ext}` });
+	return _.extend(options, {
+		slug: slug(options.title).toLowerCase(),
+		ext: options.image.type.replace("image/", "")
+	});
 }
 
-function getBase64InfoForImageAsync(options) {
+function addImageBufferAsync(options) {
 	return readFileAsync(_.get(options, "image.path"))
 		.then(function(binary) {
 			return _.extend(options, {
-				imageBase64: new Buffer(binary).toString("base64")
+				buffer: new Buffer(binary)
 			});
 		});
+}
+
+function bufferToMaxSizeAsync(buffer, type, width, height) {
+	return openImageAsync(buffer, type)
+		.then(function(image) {
+			const wScale = width / image.width(),
+				hScale = height / image.height(),
+				scale = Math.min(wScale, hScale);
+
+			if (scale >= 1) {
+				// Original image is already between the limits
+				return buffer;
+			} else {
+				return BPromise.fromCallback(function(callback) {
+					image.scale(scale, callback);
+				}).then(function(lwipImage) {
+					return BPromise.fromCallback(function(callback) {
+						lwipImage.toBuffer(type, callback);
+					});
+				});
+			}
+		})
+}
+
+function getImageVersionsAsync(options) {
+	let versions = [];
+
+	versions.push(BPromise.props({
+		filename: `${options.slug}.LARGE-DO-NOT-USE.${options.ext}`,
+		buffer: bufferToMaxSizeAsync(options.buffer, options.ext, 2000, 2000)
+	}));
+
+	versions.push(BPromise.props({
+		filename: `${options.slug}.${options.ext}`,
+		buffer: bufferToMaxSizeAsync(options.buffer, options.ext, 720, 720)
+	}))
+
+	return BPromise.all(versions);
 }
 
 function storeImageAtGitHubAsync(options) {
@@ -49,7 +86,7 @@ function storeImageAtGitHubAsync(options) {
 	const payload = {
 		branch: BRANCH,
 		message: COMMIT_MSG,
-		content: options.imageBase64
+		content: options.buffer.toString("base64")
 	};
 
 	const requestOptions = {
@@ -83,8 +120,8 @@ module.exports = function handleImageAsync(options) {
 		image = options.image;
 
 	return verifyParamsAsync(options)
-		.then(convertTitleToFilename)
-		.then(getBase64InfoForImageAsync)
-		.tap(storeImageAtGitHubAsync)
-		//.tap(function(options) { console.log(options); });
+		.then(addSlugAndExtInfo)
+		.then(addImageBufferAsync)
+		.then(getImageVersionsAsync)
+		.each(storeImageAtGitHubAsync);
 }
