@@ -3,12 +3,15 @@ const BPromise = require("bluebird"),
     express = require("express"),
     formidable = require("formidable"),
     handleImageAsync = require("./handle-image-async"),
+    mustacheExpress = require('mustache-express'),
     path = require("path"),
     util = require("util");
 
 const PORT = process.env.PORT || 8000;
 
 const app = express();
+app.engine('mustache', mustacheExpress());
+app.set('view engine', 'mustache');
 
 envVars.check();
 
@@ -48,10 +51,10 @@ app.post("/upload", function(req, res) {
     getFileUploadAsync(req)
         .then(handleImageAsync)
         .then(function() {
-            res.send("Everything OK!");
+            res.render('ready', { title: "Valmis!", linkText: "Lähetä uusi kuva" });
         })
         .catch(function(error) {
-            res.status(500).json({ error: `Something went wrong: ${error}` });
+            res.render('ready', { title: `Oi voi! ${error}`, linkText: "Koita uudelleen?" });
         })
 
     /*var form = new formidable.IncomingForm();

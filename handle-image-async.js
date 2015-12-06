@@ -63,7 +63,7 @@ function getImageVersionsAsync(options) {
 	let versions = [];
 
 	versions.push(BPromise.props({
-		filename: `${options.slug}.LARGE-DO-NOT-USE.${options.ext}`,
+		filename: `${options.slug}.LARGE.${options.ext}`,
 		buffer: bufferToMaxSizeAsync(options.buffer, options.ext, 2000, 2000)
 	}));
 
