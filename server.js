@@ -1,12 +1,32 @@
-const express = require("express"),
-	formidable = require("formidable"),
-	path = require("path"),
-	util = require("util");
+const BPromise = require("bluebird"),
+    envVars = require("./env-vars"),
+    express = require("express"),
+    formidable = require("formidable"),
+    handleImageAsync = require("./handle-image-async"),
+    path = require("path"),
+    util = require("util");
 
 const PORT = process.env.PORT || 8000;
 
 const app = express();
 
+envVars.check();
+
+function getFileUploadAsync(req) {
+    return new BPromise(function(resolve, reject) {
+        var form = new formidable.IncomingForm();
+        form.parse(req, function(err, fields, files) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({
+                    image: files && files.originalImage,
+                    title: fields && fields.imageTitle
+                })
+            }
+        });
+    });
+}
 
 // Your own super cool function
 var logger = function(req, res, next) {
@@ -24,16 +44,26 @@ var logger = function(req, res, next) {
 app.use(express.static(__dirname + '/src'));
 
 app.post("/upload", function(req, res) {
-    var form = new formidable.IncomingForm();
+
+    getFileUploadAsync(req)
+        .then(handleImageAsync)
+        .then(function() {
+            res.send("Everything OK!");
+        })
+        .catch(function(error) {
+            res.status(500).json({ error: `Something went wrong: ${error}` });
+        })
+
+    /*var form = new formidable.IncomingForm();
 
     form.parse(req, function(err, fields, files) {
       res.writeHead(200, {'content-type': 'text/plain'});
       res.write('received upload:\n\n');
       res.end(util.inspect({fields: fields, files: files}));
-    });
+    });*/
 });
 
 var server = app.listen(PORT, function() {
   console.log('Example app listening at http://%s:%s',
-  	server.address().address, server.address().port);
+    server.address().address, server.address().port);
 });
