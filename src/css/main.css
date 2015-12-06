@@ -66,8 +66,25 @@ textarea {
    Author's custom styles
    ========================================================================== */
 
+body {
+  margin: 1rem;
+}
 
+.help {
+  color: gray;
+  font-style: italic;
+}
 
+input {
+  width: 100%;
+  max-width: 640px;
+}
+
+button {
+  width: 100%;
+  max-width: 320px;
+  padding: 1rem 0;
+}
 
 
 

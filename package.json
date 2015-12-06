@@ -1,0 +1,37 @@
+{
+  "name": "github-image-uploader",
+  "version": "1.0.0",
+  "description": "A web app for uploading images easily to a GitHub repository",
+  "main": "server.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaplas/github-image-uploader.git"
+  },
+  "keywords": [
+    "image",
+    "img",
+    "upload",
+    "mobile",
+    "github",
+    "git",
+    "prose",
+    "jekyll"
+  ],
+  "author": "Jouni Kaplas <npm.oq@palvelu.kaplas.fi> (http://kaplas.net/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kaplas/github-image-uploader/issues"
+  },
+  "homepage": "https://github.com/kaplas/github-image-uploader#readme",
+  "dependencies": {
+    "express": "^4.13.3",
+    "formidable": "^1.0.17"
+  }
+}

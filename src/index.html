@@ -69,14 +69,23 @@
 
         <!-- Add your site or application content here -->
 
-        <input type="file" id="originalImage" name="originalImage" accept="image/*" />
+        <h1>Kuva-avustin</h1>
 
-        <canvas width="400" height="300" id="canvas"/>
+        <form action="/upload" enctype="multipart/form-data" method="post">
 
+            <h2>Valitse kuva:</h2>
+            <input type="file" id="imageFile" name="originalImage" accept="image/*" />
 
+            <h2>Anna sille otsikko:</h2>
+            <p class="help">
+                Esim. "Jouni ja Riksu ikkunalla"
+            </p>
+            <input type="text" name="imageTitle" />
 
+            <h2>Lopuksi:</h2>
+            <button>Lähetä</button>
 
-
+        </form>
 
         <script src="js/vendor/jquery-2.1.3.min.js"></script>
         <script src="js/helper.js"></script>
